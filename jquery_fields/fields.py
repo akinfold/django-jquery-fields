@@ -18,7 +18,7 @@ class TokenInputFieldMixin(object):
             return []
 
     def prepare_value(self, value):
-        if value:
+        if value and isinstance(value, str):
             value = value.split(',')
         value = super(TokenInputFieldMixin, self).prepare_value(value)
         return value
