@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from copy import copy
 import json
 from django.forms import Textarea
 from django.forms.widgets import flatatt
@@ -40,17 +41,18 @@ class TokenInputWidget(Textarea):
         super(Textarea, self).__init__(attrs)
 
     def render(self, name, value, attrs=None):
-        if 'prePopulate' not in self.configuration:
-            self.configuration['prePopulate'] = []
+        configuration = copy(self.configuration)
+        if 'prePopulate' not in configuration:
+            configuration['prePopulate'] = []
 
         if value is not None:
-            self.configuration['prePopulate'].extend([{'id': v, 'name': label} for v, label in self.choices])
+            configuration['prePopulate'].extend([{'id': v, 'name': label} for v, label in self.choices])
 
         final_attrs = self.build_attrs(attrs, name=name)
         context = {
             'id': final_attrs.get('id', '_'),
             'attrs': flatatt(final_attrs),
             'json_source': self.json_source,
-            'configuration': json.dumps(self.configuration)
+            'configuration': json.dumps(configuration)
         }
         return mark_safe(self.template % context)
