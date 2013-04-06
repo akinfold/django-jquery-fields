@@ -13,7 +13,10 @@ class TokenInputFieldMixin(object):
 
     def clean(self, value):
         if value:
-            return super(TokenInputFieldMixin, self).clean(value.split(','))
+            if hasattr(value, '__iter__'):
+                return value
+            else:
+                return super(TokenInputFieldMixin, self).clean(value.split(','))
         else:
             return []
 
