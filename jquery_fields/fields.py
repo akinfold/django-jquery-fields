@@ -5,14 +5,20 @@ from jquery_fields.widgets import TokenInputWidget
 
 class TokenInputFieldMixin(object):
     widget = TokenInputWidget
+    configuration = {'tokenLimit': 1}
 
     def __init__(self, choices, json_source, configuration=None, *args, **kwargs):
+        if configuration is None:
+            configuration = {}
+        configuration.update(self.configuration)
         if 'widget' not in kwargs or kwargs['widget'] is None:
             kwargs['widget'] = self.widget(json_source, configuration)
         super(TokenInputFieldMixin, self).__init__(choices, *args, **kwargs)
 
 
 class MultipleTokenInputFieldMixin(TokenInputFieldMixin):
+    configuration = {}
+
     def clean(self, value):
         if value:
             if hasattr(value, '__iter__'):
