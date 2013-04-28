@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from django.forms import ModelMultipleChoiceField, MultipleChoiceField
+from django.forms import ModelMultipleChoiceField, MultipleChoiceField, ChoiceField, ModelChoiceField
 from jquery_fields.widgets import TokenInputWidget
 
 
@@ -11,37 +11,60 @@ class TokenInputFieldMixin(object):
             kwargs['widget'] = self.widget(json_source, configuration)
         super(TokenInputFieldMixin, self).__init__(choices, *args, **kwargs)
 
+
+class MultipleTokenInputFieldMixin(TokenInputFieldMixin):
     def clean(self, value):
         if value:
             if hasattr(value, '__iter__'):
                 return value
             else:
-                return super(TokenInputFieldMixin, self).clean(value.split(','))
+                return super(MultipleTokenInputFieldMixin, self).clean(value.split(','))
         else:
             return []
 
     def prepare_value(self, value):
         if value and isinstance(value, str):
             value = value.split(',')
-        value = super(TokenInputFieldMixin, self).prepare_value(value)
+        value = super(MultipleTokenInputFieldMixin, self).prepare_value(value)
         return value
 
 
-class TokenInputField(TokenInputFieldMixin, MultipleChoiceField):
-    def __init__(self, queryset, json_source, *args, **kwargs):
-        super(TokenInputField, self).__init__(queryset, json_source, *args, **kwargs)
+class ChoiceTokenInputField(TokenInputFieldMixin, ChoiceField):
+    def __init__(self, choices, json_source, *args, **kwargs):
+        super(ChoiceTokenInputField, self).__init__(choices, json_source, *args, **kwargs)
 
 
-class ModelTokenInputField(TokenInputFieldMixin, ModelMultipleChoiceField):
+class ModelChoiceTokenInputField(TokenInputFieldMixin, ModelChoiceField):
     choices = []    # choices are always equal to field value, look into 'prepare_value' implementation
 
     def __init__(self, queryset, json_source, *args, **kwargs):
-        super(ModelTokenInputField, self).__init__(queryset, json_source, *args, **kwargs)
+        super(ModelChoiceTokenInputField, self).__init__(queryset, json_source, *args, **kwargs)
+
+    def prepare_value(self, value):
+        # setup widget choices to current field value
+        choices = []
+        if value:
+            obj = self.clean(value)
+            choices.append((super(ModelChoiceTokenInputField, self).prepare_value(obj), self.label_from_instance(obj)))
+        self.widget.choices = choices
+        return super(ModelChoiceTokenInputField, self).prepare_value(value)
+
+
+class MultipleChoiceTokenInputField(MultipleTokenInputFieldMixin, MultipleChoiceField):
+    def __init__(self, choices, json_source, *args, **kwargs):
+        super(MultipleChoiceTokenInputField, self).__init__(choices, json_source, *args, **kwargs)
+
+
+class ModelMultipleChoiceTokenInputField(MultipleTokenInputFieldMixin, ModelMultipleChoiceField):
+    choices = []    # choices are always equal to field value, look into 'prepare_value' implementation
+
+    def __init__(self, queryset, json_source, *args, **kwargs):
+        super(ModelMultipleChoiceTokenInputField, self).__init__(queryset, json_source, *args, **kwargs)
 
     def prepare_value(self, value):
         # setup widget choices to current field value
         choices = []
         for obj in self.clean(value):
-            choices.append((super(ModelTokenInputField, self).prepare_value(obj), self.label_from_instance(obj)))
+            choices.append((super(ModelMultipleChoiceTokenInputField, self).prepare_value(obj), self.label_from_instance(obj)))
         self.widget.choices = choices
-        return super(ModelTokenInputField, self).prepare_value(value)
+        return super(ModelMultipleChoiceTokenInputField, self).prepare_value(value)
