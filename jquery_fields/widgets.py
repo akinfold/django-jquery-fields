@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 from copy import copy
 import json
-from django.forms import Textarea
-from django.forms.widgets import flatatt
+from django.conf import settings
+from django.forms import Textarea, forms
+from django.forms.widgets import flatatt, DateTimeInput
+from django.utils.encoding import force_unicode
 from django.utils.safestring import mark_safe
 
 
@@ -54,5 +56,50 @@ class TokenInputWidget(Textarea):
             'attrs': flatatt(final_attrs),
             'json_source': self.json_source,
             'configuration': json.dumps(configuration)
+        }
+        return mark_safe(self.template % context)
+
+
+class BootstrapDateTimePicker(DateTimeInput):
+    template = u'''
+<input%(attrs)s/>
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('#%(id)s').datetimepicker(%(configuration)s);
+    });
+</script>
+'''
+
+    def __init__(self, attrs=None, format=None, configuration=None):
+        self.configuration = configuration or {}
+        super(BootstrapDateTimePicker, self).__init__(attrs=attrs, format=format)
+
+    def _media(self):
+        css = {'all': ('jquery_fields/bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css',)}
+        # if settings.DEBUG:
+        #     js = ('jquery_fields/bootstrap-datetimepicker/js/bootstrap-datetimepicker.js',)
+        # else:
+        #     js = ('jquery_fields/bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js',)
+        # because of the bug in original bootstrap-datetimepicker.min.js we will use unminified file
+        # look there for details https://github.com/tarruda/bootstrap-datetimepicker/pull/135
+        js = ('jquery_fields/bootstrap-datetimepicker/js/bootstrap-datetimepicker.js',)
+        language = self.configuration.get('language', 'en')
+        if language and language != 'en':
+            js = js + ('jquery_fields/bootstrap-datetimepicker/js/locales/bootstrap-datetimepicker.%s.js' % language,)
+        return forms.Media(css=css, js=js)
+
+    media = property(_media)
+
+    def render(self, name, value, attrs=None):
+        if value is None:
+            value = ''
+        final_attrs = self.build_attrs(attrs, type=self.input_type, name=name)
+        if value != '':
+            # Only add the 'value' attribute if a value is non-empty.
+            final_attrs['value'] = force_unicode(self._format_value(value))
+        context = {
+            'id': final_attrs.get('id', '_'),
+            'attrs': flatatt(final_attrs),
+            'configuration': json.dumps(self.configuration)
         }
         return mark_safe(self.template % context)
