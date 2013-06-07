@@ -62,10 +62,15 @@ class TokenInputWidget(Textarea):
 
 class BootstrapDateTimePicker(DateTimeInput):
     template = u'''
-<input%(attrs)s/>
+<div id="%(id)s_wrapper" class="input-append">
+    <input%(attrs)s/>
+    <span class="add-on">
+        <i data-time-icon="icon-time" data-date-icon="icon-calendar"></i>
+    </span>
+</div>
 <script type="text/javascript">
     $(document).ready(function() {
-        $('#%(id)s').datetimepicker(%(configuration)s);
+        $('#%(id)s_wrapper').datetimepicker(%(configuration)s);
     });
 </script>
 '''
@@ -76,13 +81,10 @@ class BootstrapDateTimePicker(DateTimeInput):
 
     def _media(self):
         css = {'all': ('jquery_fields/bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css',)}
-        # if settings.DEBUG:
-        #     js = ('jquery_fields/bootstrap-datetimepicker/js/bootstrap-datetimepicker.js',)
-        # else:
-        #     js = ('jquery_fields/bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js',)
-        # because of the bug in original bootstrap-datetimepicker.min.js we will use unminified file
-        # look there for details https://github.com/tarruda/bootstrap-datetimepicker/pull/135
-        js = ('jquery_fields/bootstrap-datetimepicker/js/bootstrap-datetimepicker.js',)
+        if settings.DEBUG:
+            js = ('jquery_fields/bootstrap-datetimepicker/js/bootstrap-datetimepicker.js',)
+        else:
+            js = ('jquery_fields/bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js',)
         language = self.configuration.get('language', 'en')
         if language and language != 'en':
             js = js + ('jquery_fields/bootstrap-datetimepicker/js/locales/bootstrap-datetimepicker.%s.js' % language,)
